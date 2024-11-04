@@ -4,7 +4,7 @@ import pyrealsense2 as rs
 from ultralytics import YOLO
 
 # Load the YOLOv5 model (replace 'yolov5s.pt' with your custom-trained model file)
-model = YOLO("yolov5s.pt")  # Replace with your trained model path
+model = YOLO("yolov5su.pt")  # Replace with your trained model path
 
 # Initialize RealSense pipeline
 pipeline = rs.pipeline()
