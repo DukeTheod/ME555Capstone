@@ -1,15 +1,15 @@
 import cv2
 import numpy as np
-import RPi.GPIO as GPIO
+import lgpio
 import time
 
-# Setup for GPIO
-LED_PIN = 17  # Choose the GPIO pin where the LED is connected
-GPIO.setmode(GPIO.BCM)  # Use Broadcom pin numbering
-GPIO.setup(LED_PIN, GPIO.OUT)  # Set the pin as an output
+# GPIO setup for LED control
+LED = 17  # GPIO pin connected to the LED
+h = lgpio.gpiochip_open(0)  # Open gpiochip (use '0' or '10' based on availability)
+lgpio.gpio_claim_output(h, LED)
 
-# Initialize webcam (0 is usually the default camera index)
-cap = cv2.VideoCapture(0)
+# Initialize webcam (index might change based on your setup)
+cap = cv2.VideoCapture(4)
 
 # Define the color ranges for detecting red (HSV format)
 lower_red1 = np.array([0, 150, 150])
@@ -17,8 +17,9 @@ upper_red1 = np.array([10, 255, 255])
 lower_red2 = np.array([170, 150, 150])
 upper_red2 = np.array([180, 255, 255])
 
-# Function to detect and label parts, and light up the LED if red is detected
+# Function to detect and label parts and control the LED if red is detected
 def detect_and_label_parts(frame):
+    global h  # Ensure 'h' is accessible in this function
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Create masks for detecting red color
@@ -34,15 +35,15 @@ def detect_and_label_parts(frame):
         area = cv2.contourArea(contour)
         if area > 500:  # Adjust the area threshold as needed
             red_detected = True
-            x, y, w, h = cv2.boundingRect(contour)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            cv2.putText(frame, "False", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            x, y, w, h_rect = cv2.boundingRect(contour)  # Renamed variable to avoid conflict
+            cv2.rectangle(frame, (x, y), (x + w, y + h_rect), (0, 0, 255), 2)
+            cv2.putText(frame, "Red Detected", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-    # Light up the LED if red is detected
+    # Control the LED based on red detection
     if red_detected:
-        GPIO.output(LED_PIN, GPIO.HIGH)
+        lgpio.gpio_write(h, LED, 1)  # Turn LED on
     else:
-        GPIO.output(LED_PIN, GPIO.LOW)
+        lgpio.gpio_write(h, LED, 0)  # Turn LED off
 
 print("Press 'q' to quit the program.")
 
@@ -64,8 +65,11 @@ try:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 finally:
-    # Clean up GPIO settings
-    GPIO.output(LED_PIN, GPIO.LOW)
-    GPIO.cleanup()
+    # Ensure the LED is off and clean up GPIO
+    if h is not None:
+        lgpio.gpio_write(h, LED, 0)
+        lgpio.gpiochip_close(h)
+
+    # Release the webcam and close windows
     cap.release()
     cv2.destroyAllWindows()

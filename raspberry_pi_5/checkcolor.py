@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Initialize webcam (0 is usually the default camera index)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(4)
 
 # Define the color ranges for detecting red and green (HSV format)
 lower_red1 = np.array([0, 150, 150])
