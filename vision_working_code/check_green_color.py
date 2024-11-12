@@ -5,11 +5,13 @@ import time
 
 # GPIO setup for LED control
 LED = 17  # GPIO pin connected to the LED
-h = lgpio.gpiochip_open(0)  # Open gpiochip (use '0' or '10' based on availability)
+h = lgpio.gpiochip_open(0)  # Open gpiochip (use '0' based on GPIO chip available)
 lgpio.gpio_claim_output(h, LED)
 
-# Initialize webcam (index might change based on your setup)
+# Initialize webcam (index 0 is the default for most setups)
 cap = cv2.VideoCapture(4)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 # Define the color ranges for detecting green (HSV format)
 lower_green = np.array([35, 100, 100])

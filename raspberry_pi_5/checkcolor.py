@@ -1,8 +1,12 @@
 import cv2
 import numpy as np
 
-# Initialize webcam (0 is usually the default camera index)
+# Initialize webcam (use 0 for the default camera index on Raspberry Pi)
 cap = cv2.VideoCapture(4)
+
+# Set a lower resolution to reduce processing load (optional)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 # Define the color ranges for detecting red and green (HSV format)
 lower_red1 = np.array([0, 150, 150])
