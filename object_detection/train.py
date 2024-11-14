@@ -6,12 +6,12 @@ yolov5_repo_path = '/home/theod/Documents/ME555Capstone/object_detection/yolov5'
 
 # Path to the data configuration file and pre-trained weights (adjust as needed)
 data_yaml_path = '/home/theod/Documents/ME555Capstone/object_detection/custom_data.yaml'  # Your data config path
-weights_path = 'yolov5n.pt'  # Use 'yolov5n.pt' for Nano version or adjust as needed for smaller models
+weights_path = 'yolov5s.pt'  # Use 'yolov5n.pt' for Nano version or adjust as needed for smaller models
 
 # Training parameters
 img_size = 640  # Image size (adjust as needed for Raspberry Pi resources)
-batch_size = 8  # Reduce batch size to fit in Raspberry Pi memory
-epochs = 50  # Number of training epochs
+batch_size = 3  # Reduce batch size to fit in Raspberry Pi memory
+epochs = 1 # Number of training epochs
 
 # Command to train the YOLOv5 model
 train_command = [
