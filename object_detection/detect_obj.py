@@ -1,69 +1,49 @@
-import sys
 import torch
 import cv2
 import numpy as np
 import lgpio
-
-# Add YOLOv5 repository path to Python's sys.path
-sys.path.append('/home/theod/Documents/ME555Capstone/object_detection/yolov5')
 
 # GPIO setup for LED control
 LED = 17  # GPIO pin connected to the LED
 h = lgpio.gpiochip_open(0)  # Open gpiochip (use '0' based on GPIO chip available)
 lgpio.gpio_claim_output(h, LED)
 
-# Load the trained YOLOv5 model (best.pt)
-model = torch.load('/home/theod/Documents/ME555Capstone/object_detection/yolov5/weights/best.pt', map_location='cpu')['model'].float()
-model.eval()  # Set to evaluation mode
+# Load the YOLO model (using PyTorch)
+model_path = '/home/theod/Documents/ME555Capstone/object_detection/best.pt'  # Replace with the actual path to your YOLO .pt model
+model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=True)
+model.eval()  # Set the model to evaluation mode
 
 # Initialize webcam (index 0 is the default for most setups)
-cap = cv2.VideoCapture(4)  # Use the webcam feed (index 4)
+cap = cv2.VideoCapture(4)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-# Define the class name (you can update this if needed)
-# Assuming you trained for a single class or that your object is the first class
-target_class_name = 'defective_part'  # Change this to your trained class name
-target_class_id = 0  # If your object is the first class
-
-# Function to detect and label parts using YOLOv5 and control the LED
+# Function to detect parts and control the LED
 def detect_and_label_parts(frame):
     global h  # Ensure 'h' is accessible in this function
 
-    # Convert frame to RGB for YOLOv5 model (YOLOv5 expects RGB)
-    img = frame[...,::-1]  # Convert BGR to RGB (OpenCV default is BGR)
-    img = np.asarray(img)  # Ensure it's a NumPy array
-    img = img / 255.0  # Normalize the image
-    img = np.expand_dims(img, axis=0)  # Add batch dimension
-    img = torch.from_numpy(img).float()  # Convert to tensor
+    # Convert the frame to a format that PyTorch can process
+    results = model(frame)  # Run inference
+    detections = results.xyxy[0].numpy()  # Get detections as NumPy array: [x1, y1, x2, y2, confidence, class_id]
 
-    # Run inference on the image
-    with torch.no_grad():
-        results = model(img)  # Perform inference on the image
-
-    # Get the results (bounding boxes, class ids, and confidence scores)
-    boxes = results.xywh[0][:, :-1]  # Get coordinates of bounding boxes
-    confidences = results.xywh[0][:, -1]  # Confidence scores for each detection
-    labels = results.names  # Class labels from YOLOv5 model
-
-    # Flag to detect if the target object is present
     object_detected = False
 
-    for box, confidence, label in zip(boxes, confidences, labels):
-        if confidence >= 0.5:  # Confidence threshold
-            x1, y1, x2, y2 = map(int, box)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Draw bounding box
-            cv2.putText(frame, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    for detection in detections:
+        x1, y1, x2, y2, confidence, class_id = map(float, detection[:6])  # Extract detection details
+        class_id = int(class_id)
 
-            # Check if the detected object matches the target class
-            if label == target_class_name or label == labels[target_class_id]:
-                object_detected = True
+        # Check if the confidence and class ID meet the conditions
+        if confidence > 0.5 and class_id == 0:  # Adjust '0' to your target class ID if needed
+            object_detected = True
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.putText(frame, f"Object Detected ({confidence:.2f})", (int(x1), int(y1) - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-    # Control the LED based on detection of the target object
+    # Control the LED based on object detection
     if object_detected:
-        lgpio.gpio_write(h, LED, 1)  # Turn LED on if object detected
+        lgpio.gpio_write(h, LED, 1)  # Turn LED on if the target object is detected
     else:
-        lgpio.gpio_write(h, LED, 0)  # Turn LED off if no object detected
+        lgpio.gpio_write(h, LED, 0)  # Turn LED off if no object is detected
 
 print("Press 'q' to quit the program.")
 
@@ -75,11 +55,11 @@ try:
             print("Error: Failed to capture image.")
             break
 
-        # Detect and label parts using YOLOv5 model
+        # Detect and label parts using PyTorch YOLO model
         detect_and_label_parts(frame)
 
         # Display the frame with annotations
-        cv2.imshow("Defect Detection", frame)
+        cv2.imshow("Part Detection", frame)
 
         # Exit loop on 'q' key press
         if cv2.waitKey(1) & 0xFF == ord('q'):
