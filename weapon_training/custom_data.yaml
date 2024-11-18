@@ -1,5 +1,0 @@
-path: /home/theod/Documents/ME555Capstone/weapon_training/dataset
-train: train/images
-val: val/images
-nc: 9
-names: ['Automatic Rifle', 'Bazooka', 'Grenade Launcher', 'Handgun', 'Knife', 'Shotgun', 'SMG', 'Sniper', 'Sword']
