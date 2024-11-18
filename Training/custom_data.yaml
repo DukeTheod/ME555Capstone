@@ -1,5 +1,0 @@
-path: C:/Users/theod/Documents/School/Github/ME555Capstone/Training/dataset
-train: train/images
-val: val/images
-nc: 1  # Number of classes (1 for a single class labeled as 0)
-names: ['Part1114']  # Name of the single class
